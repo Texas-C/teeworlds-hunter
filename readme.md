@@ -18,3 +18,8 @@ Please visit https://www.teeworlds.com/ for up-to-date information about
 the game, including new versions, custom maps and much more.
 
 Originally written by Magnus Auvinen.
+
+Hunter Modifications by bluelightzero.
+If you find any bugs please report to:
+
+	http://github.com/bluelightzero/teeworlds-hunter

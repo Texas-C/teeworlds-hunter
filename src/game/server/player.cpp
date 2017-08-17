@@ -29,6 +29,8 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, bool Dummy)
 	m_RespawnDisabled = GameServer()->m_pController->GetStartRespawnState();
 	m_DeadSpecMode = false;
 	m_Spawning = 0;
+	hunter = false; // Hunter
+	dead = true; // Hunter
 }
 
 CPlayer::~CPlayer()
@@ -358,6 +360,11 @@ void CPlayer::SetTeam(int Team, bool DoChatMsg)
 	}
 }
 
+void CPlayer::SetTeamDirect(int Team)
+{
+	m_Team = Team;
+}
+
 void CPlayer::TryRespawn()
 {
 	vec2 SpawnPos;
@@ -369,4 +376,17 @@ void CPlayer::TryRespawn()
 	m_pCharacter = new(m_ClientID) CCharacter(&GameServer()->m_World);
 	m_pCharacter->Spawn(this, SpawnPos);
 	GameServer()->CreatePlayerSpawn(SpawnPos);
+}
+
+void CPlayer::setHunter(bool isHunter)
+{
+	hunter = isHunter;
+	if(isHunter)
+	{
+		GameServer()->SendBroadcast("You are the Hunter!\nKill all other players to win!", m_ClientID);
+	}
+	if(m_pCharacter)
+	{
+		m_pCharacter->hunter = isHunter;
+	}
 }

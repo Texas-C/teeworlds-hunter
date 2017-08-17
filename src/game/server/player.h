@@ -27,6 +27,7 @@ public:
 	void TryRespawn();
 	void Respawn();
 	void SetTeam(int Team, bool DoChatMsg=true);
+	void SetTeamDirect(int Team);  // Hunter
 	int GetTeam() const { return m_Team; };
 	int GetCID() const { return m_ClientID; };
 	bool IsDummy() const { return m_Dummy; }
@@ -40,6 +41,7 @@ public:
 	void OnDisconnect();
 
 	void KillCharacter(int Weapon = WEAPON_GAME);
+	void setHunter(bool isHunter);  // Hunter
 	CCharacter *GetCharacter();
 
 	//---------------------------------------------------------
@@ -77,6 +79,9 @@ public:
 	int m_LastEmote;
 	int m_LastKill;
 	int m_LastReadyChange;
+
+	bool hunter;  // Hunter
+	bool dead;  // Hunter
 
 	// TODO: clean this up
 	struct

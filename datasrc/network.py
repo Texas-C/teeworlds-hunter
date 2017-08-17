@@ -234,6 +234,10 @@ Messages = [
 		NetString("m_pMessage"),
 	]),
 
+	NetMessage("Sv_Broadcast", [
+		NetString("m_pMessage"),
+	]),
+
 	NetMessage("Sv_Chat", [
 		NetIntRange("m_Team", 'TEAM_SPECTATORS', 'TEAM_BLUE'),
 		NetIntRange("m_ClientID", -1, 'MAX_CLIENTS-1'),
