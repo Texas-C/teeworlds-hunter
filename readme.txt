@@ -1,4 +1,4 @@
-Copyright (c) 2016 Magnus Auvinen
+Copyright (c) 2012 Magnus Auvinen
 
 
 This software is provided 'as-is', without any express or implied
@@ -8,3 +8,8 @@ arising from the use of this software.
 
 Please visit http://www.teeworlds.com for up-to-date information about 
 the game, including new versions, custom maps and much more.
+
+
+Hunter Modifications by bluelightzero.
+If you find any bugs please report to:
+http://github.com/bluelightzero/teeworlds-hunter

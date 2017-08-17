@@ -73,7 +73,42 @@ void CProjectile::Tick()
 			GameServer()->CreateSound(CurPos, m_SoundImpact);
 
 		if(m_Explosive)
-			GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, false);
+			if(OwnerChar && OwnerChar->GetPlayer() && OwnerChar->GetPlayer()->GetHunter())
+			{
+				GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, false);
+				/*
+				GameServer()->CreateExplosion(CurPos+vec2(50,50), m_Owner, m_Weapon, false);
+				GameServer()->CreateExplosion(CurPos+vec2(50,-50), m_Owner, m_Weapon, true);
+				GameServer()->CreateExplosion(CurPos+vec2(-50,50), m_Owner, m_Weapon, false);
+				GameServer()->CreateExplosion(CurPos+vec2(-50,-50), m_Owner, m_Weapon, false);
+				*/
+
+				CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
+
+				for(int i=0;i<20;i++)
+				{
+					float a = (rand()%314)/5.0;
+					vec2 dir = vec2(cosf(a), sinf(a));
+					CProjectile *pProj = new CProjectile(GameWorld(), WEAPON_SHOTGUN,
+						m_Owner,
+						CurPos+dir,
+						dir*0.5,
+						(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_ShotgunLifetime),
+						1, 0, 0, -1, SOUND_SHOTGUN_FIRE);
+
+					// pack the Projectile and send it to the client Directly
+					CNetObj_Projectile p;
+					pProj->FillInfo(&p);
+
+					Msg.AddInt(1);
+					for(unsigned i = 0; i < sizeof(CNetObj_Projectile)/sizeof(int); i++)
+						Msg.AddInt(((int *)&p)[i]);
+				}
+
+				Server()->SendMsg(&Msg, 0, m_Owner);
+			}
+			else
+				GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, false);
 
 		else if(TargetChr)
 			TargetChr->TakeDamage(m_Direction * max(0.001f, m_Force), m_Damage, m_Owner, m_Weapon);

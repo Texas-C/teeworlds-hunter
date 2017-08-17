@@ -313,8 +313,9 @@ void CCharacter::FireWeapon()
 				else
 					Dir = vec2(0.f, -1.f);
 
-				pTarget->TakeDamage(vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f, g_pData->m_Weapons.m_Hammer.m_pBase->m_Damage,
+				pTarget->TakeDamage(vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f, m_pPlayer->GetHunter() ? 20.0 : g_pData->m_Weapons.m_Hammer.m_pBase->m_Damage,
 					m_pPlayer->GetCID(), m_ActiveWeapon);
+
 				Hits++;
 			}
 
@@ -331,7 +332,7 @@ void CCharacter::FireWeapon()
 				ProjStartPos,
 				Direction,
 				(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_GunLifetime),
-				1, 0, 0, -1, WEAPON_GUN);
+				(m_pPlayer && m_pPlayer->GetHunter()) ? 2 : 1, 0, 0, -1, WEAPON_GUN);
 
 			GameServer()->CreateSound(m_Pos, SOUND_GUN_FIRE);
 		} break;
@@ -347,12 +348,13 @@ void CCharacter::FireWeapon()
 				a += Spreading[i+2];
 				float v = 1-(absolute(i)/(float)ShotSpread);
 				float Speed = mix((float)GameServer()->Tuning()->m_ShotgunSpeeddiff, 1.0f, v);
+
 				CProjectile *pProj = new CProjectile(GameWorld(), WEAPON_SHOTGUN,
 					m_pPlayer->GetCID(),
 					ProjStartPos,
 					vec2(cosf(a), sinf(a))*Speed,
 					(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_ShotgunLifetime),
-					1, 0, 0, -1, WEAPON_SHOTGUN);
+					(m_pPlayer && m_pPlayer->GetHunter()) ? 2 : 1, 0, 0, -1, WEAPON_SHOTGUN);
 			}
 
 			GameServer()->CreateSound(m_Pos, SOUND_SHOTGUN_FIRE);
@@ -661,6 +663,7 @@ bool CCharacter::IncreaseArmor(int Amount)
 
 void CCharacter::Die(int Killer, int Weapon)
 {
+
 	// we got to wait 0.5 secs before respawning
 	m_pPlayer->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()/2;
 	int ModeSpecial = GameServer()->m_pController->OnCharacterDeath(this, GameServer()->m_apPlayers[Killer], Weapon);
@@ -672,12 +675,21 @@ void CCharacter::Die(int Killer, int Weapon)
 	GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
 
 	// send the kill message
-	CNetMsg_Sv_KillMsg Msg;
-	Msg.m_Killer = Killer;
-	Msg.m_Victim = m_pPlayer->GetCID();
-	Msg.m_Weapon = Weapon;
-	Msg.m_ModeSpecial = ModeSpecial;
-	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1);
+	CNetMsg_Sv_KillMsg PlayerMsg;
+	PlayerMsg.m_Killer = m_pPlayer->GetCID();  // This makes the killer Anonymous
+	PlayerMsg.m_Victim = m_pPlayer->GetCID();
+	PlayerMsg.m_Weapon = WEAPON_WORLD;
+	PlayerMsg.m_ModeSpecial = ModeSpecial;
+
+	CNetMsg_Sv_KillMsg SpectatorMsg;
+	SpectatorMsg.m_Killer = Killer;
+	SpectatorMsg.m_Victim = m_pPlayer->GetCID();
+	SpectatorMsg.m_Weapon = Weapon;
+	SpectatorMsg.m_ModeSpecial = ModeSpecial;
+
+	for(int i = 0; i < MAX_CLIENTS; i++)
+		if(GameServer()->IsClientReady(i))
+			Server()->SendPackMsg(GameServer()->IsClientPlayer(i) ? &PlayerMsg : &SpectatorMsg, MSGFLAG_VITAL, i);
 
 	// a nice sound
 	GameServer()->CreateSound(m_Pos, SOUND_PLAYER_DIE);
@@ -699,8 +711,9 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		return false;
 
 	// m_pPlayer only inflicts half damage on self
+	// hunter do not get any damage
 	if(From == m_pPlayer->GetCID())
-		Dmg = max(1, Dmg/2);
+		Dmg = (m_pPlayer && m_pPlayer->GetHunter()) ? 0 : max(1, Dmg/2);
 
 	m_DamageTaken++;
 

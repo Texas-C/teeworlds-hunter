@@ -21,7 +21,10 @@ public:
 	void TryRespawn();
 	void Respawn();
 	void SetTeam(int Team, bool DoChatMsg=true);
+	void SetTeamDirect(int Team);
+	void SetHunter(bool isHunter);
 	int GetTeam() const { return m_Team; };
+	bool GetHunter() const { return m_Hunter; };
 	int GetCID() const { return m_ClientID; };
 
 	void Tick();
@@ -107,6 +110,7 @@ private:
 	bool m_Spawning;
 	int m_ClientID;
 	int m_Team;
+	bool m_Hunter;
 };
 
 #endif

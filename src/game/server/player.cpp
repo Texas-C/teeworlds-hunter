@@ -21,6 +21,7 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 	m_SpectatorID = SPEC_FREEVIEW;
 	m_LastActionTick = Server()->Tick();
 	m_TeamChangeTick = Server()->Tick();
+	m_Hunter = false;
 }
 
 CPlayer::~CPlayer()
@@ -278,6 +279,11 @@ void CPlayer::SetTeam(int Team, bool DoChatMsg)
 	}
 }
 
+void CPlayer::SetTeamDirect(int Team)
+{
+	m_Team = Team;
+}
+
 void CPlayer::TryRespawn()
 {
 	vec2 SpawnPos;
@@ -289,4 +295,11 @@ void CPlayer::TryRespawn()
 	m_pCharacter = new(m_ClientID) CCharacter(&GameServer()->m_World);
 	m_pCharacter->Spawn(this, SpawnPos);
 	GameServer()->CreatePlayerSpawn(SpawnPos);
+}
+
+void CPlayer::SetHunter(bool isHunter)
+{
+	m_Hunter = isHunter;
+	if(isHunter)
+		GameServer()->SendBroadcast("You are the Hunter!\nKill all other players to win!", m_ClientID);
 }
