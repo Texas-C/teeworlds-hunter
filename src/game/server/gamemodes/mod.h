@@ -23,10 +23,16 @@ public:
 	virtual void Tick();
 	virtual int OnCharacterDeath(class CCharacter *pVictim, class CPlayer *pKiller, int Weapon);
 	virtual void DoWincheck();
-	virtual bool CanJoinTeam(int Team, int NotThisID);
 	virtual bool CanChangeTeam(CPlayer *pPlayer, int JoinTeam);
 	virtual void OnCharacterSpawn(class CCharacter *pChr);
 	virtual void PostReset();
 	// add more virtual functions here if you wish
+
+private:
+	void ReleaseAll();
+
+	int m_Hunters = 0;
+	int m_Civics = 0;
+	int m_Deathes = 0;
 };
 #endif

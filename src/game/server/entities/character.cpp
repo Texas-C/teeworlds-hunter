@@ -332,7 +332,7 @@ void CCharacter::FireWeapon()
 				ProjStartPos,
 				Direction,
 				(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_GunLifetime),
-				(m_pPlayer && m_pPlayer->GetHunter()) ? 2 : 1, 0, 0, -1, WEAPON_GUN);
+				m_pPlayer->GetHunter() ? 2 : 1, 0, 0, -1, WEAPON_GUN);
 
 			GameServer()->CreateSound(m_Pos, SOUND_GUN_FIRE);
 		} break;
@@ -354,7 +354,7 @@ void CCharacter::FireWeapon()
 					ProjStartPos,
 					vec2(cosf(a), sinf(a))*Speed,
 					(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_ShotgunLifetime),
-					(m_pPlayer && m_pPlayer->GetHunter()) ? 2 : 1, 0, 0, -1, WEAPON_SHOTGUN);
+					m_pPlayer->GetHunter() ? 2 : 1, 0, 0, -1, WEAPON_SHOTGUN);
 			}
 
 			GameServer()->CreateSound(m_Pos, SOUND_SHOTGUN_FIRE);
@@ -675,21 +675,19 @@ void CCharacter::Die(int Killer, int Weapon)
 	GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
 
 	// send the kill message
-	CNetMsg_Sv_KillMsg PlayerMsg;
-	PlayerMsg.m_Killer = m_pPlayer->GetCID();  // This makes the killer Anonymous
-	PlayerMsg.m_Victim = m_pPlayer->GetCID();
-	PlayerMsg.m_Weapon = WEAPON_WORLD;
-	PlayerMsg.m_ModeSpecial = ModeSpecial;
+	CNetMsg_Sv_KillMsg Msg;
+	Msg.m_Killer = Killer;
+	Msg.m_Victim = m_pPlayer->GetCID();
+	Msg.m_Weapon = Weapon;
+	Msg.m_ModeSpecial = ModeSpecial;
 
-	CNetMsg_Sv_KillMsg SpectatorMsg;
-	SpectatorMsg.m_Killer = Killer;
-	SpectatorMsg.m_Victim = m_pPlayer->GetCID();
-	SpectatorMsg.m_Weapon = Weapon;
-	SpectatorMsg.m_ModeSpecial = ModeSpecial;
+	CNetMsg_Sv_KillMsg PlayerMsg(Msg);
+	PlayerMsg.m_Killer = m_pPlayer->GetCID();  // This makes the killer Anonymous
+	PlayerMsg.m_Weapon = WEAPON_WORLD;
 
 	for(int i = 0; i < MAX_CLIENTS; i++)
 		if(GameServer()->IsClientReady(i))
-			Server()->SendPackMsg(GameServer()->IsClientPlayer(i) ? &PlayerMsg : &SpectatorMsg, MSGFLAG_VITAL, i);
+			Server()->SendPackMsg((GameServer()->IsClientPlayer(i) && !GameServer()->m_apPlayers[i]->GetHunter()) ? &PlayerMsg : &Msg, MSGFLAG_VITAL, i);
 
 	// a nice sound
 	GameServer()->CreateSound(m_Pos, SOUND_PLAYER_DIE);
@@ -713,7 +711,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 	// m_pPlayer only inflicts half damage on self
 	// hunter do not get any damage
 	if(From == m_pPlayer->GetCID())
-		Dmg = (m_pPlayer && m_pPlayer->GetHunter()) ? 0 : max(1, Dmg/2);
+		Dmg = m_pPlayer->GetHunter() ? 0 : max(1, Dmg/2);
 
 	m_DamageTaken++;
 

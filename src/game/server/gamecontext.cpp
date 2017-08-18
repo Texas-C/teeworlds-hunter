@@ -821,6 +821,8 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 		{
 			CNetMsg_Cl_SetTeam *pMsg = (CNetMsg_Cl_SetTeam *)pRawMsg;
 
+			pPlayer->m_WantTeam = pMsg->m_Team;
+
 			if(pPlayer->GetTeam() == pMsg->m_Team || (g_Config.m_SvSpamprotection && pPlayer->m_LastSetTeam && pPlayer->m_LastSetTeam+Server()->TickSpeed()*3 > Server()->Tick()))
 				return;
 
@@ -854,12 +856,12 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 					pPlayer->m_TeamChangeTick = Server()->Tick();
 				}
 				else
-					SendBroadcast("Teams must be balanced, please join other team", ClientID);
+					SendBroadcast("You will join the game the next round", ClientID);
 			}
 			else
 			{
 				char aBuf[128];
-				str_format(aBuf, sizeof(aBuf), "Please wait for this round to end.");
+				str_format(aBuf, sizeof(aBuf), "Only %d active players are allowed", Server()->MaxClients()-g_Config.m_SvSpectatorSlots);
 				SendBroadcast(aBuf, ClientID);
 			}
 		}
@@ -1150,7 +1152,7 @@ void CGameContext::ConShuffleTeams(IConsole::IResult *pResult, void *pUserData)
 		if(pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS)
 			++PlayerTeam;
 	PlayerTeam = (PlayerTeam+1)/2;
-	
+
 	pSelf->SendChat(-1, CGameContext::CHAT_ALL, "Teams were shuffled");
 
 	for(int i = 0; i < MAX_CLIENTS; ++i)

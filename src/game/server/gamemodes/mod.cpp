@@ -29,15 +29,24 @@ CGameControllerMOD::CGameControllerMOD(class CGameContext *pGameServer)
 
 void CGameControllerMOD::PostReset()
 {
+	m_Hunters = 0;
+	m_Civics = 0;
+	m_Deathes = 0;
+
 	for(int i = 0; i < MAX_CLIENTS; i++)
 		if(GameServer()->m_apPlayers[i])
 		{
 			GameServer()->m_apPlayers[i]->SetHunter(false);
-			GameServer()->m_apPlayers[i]->SetTeamDirect(GameServer()->m_pController->ClampTeam(1));
-			GameServer()->m_apPlayers[i]->Respawn();
-			GameServer()->m_apPlayers[i]->m_Score = 0;
-			GameServer()->m_apPlayers[i]->m_ScoreStartTick = Server()->Tick();
-			GameServer()->m_apPlayers[i]->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()/2;
+			if(GameServer()->m_apPlayers[i]->GetTeam() == TEAM_SPECTATORS && GameServer()->m_apPlayers[i]->m_WantTeam != TEAM_SPECTATORS)
+			{
+				GameServer()->m_apPlayers[i]->SetTeamDirect(GameServer()->m_pController->ClampTeam(GameServer()->m_apPlayers[i]->m_WantTeam));
+				GameServer()->m_apPlayers[i]->Respawn();
+				GameServer()->m_apPlayers[i]->m_Score = 0;
+				GameServer()->m_apPlayers[i]->m_ScoreStartTick = Server()->Tick();
+				GameServer()->m_apPlayers[i]->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()/2;
+			}
+			if(GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS)
+				m_Civics++;
 		}
 }
 
@@ -45,64 +54,61 @@ void CGameControllerMOD::Tick()
 {
 	// this is the main part of the gamemode, this function is run every tick
 
-	int numOfHunters = 0;
-	int numOfPlayers = 0;
-	int numOfSpectators = 0;
+	if(!GameServer()->m_World.m_Paused && !IsGameOver())
+	{
+		char aBuf[128];
 
-	for(int i = 0; i < MAX_CLIENTS; i++)
-		if(GameServer()->m_apPlayers[i])
+		// when there are no hunters, try to elect one
+		// sleep when no one play
+		if(m_Hunters == 0 && (m_Civics || Server()->Tick() % (Server()->TickSpeed() * 3) == 0))
 		{
-			if(GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS)
+			// release who wants to join the game first
+			PostReset();
+
+			// elect hunter
+			if(m_Civics <= 1)
 			{
-				if(GameServer()->m_apPlayers[i]->GetHunter())
-					numOfHunters++;
-				else
-					numOfPlayers++;
+				if(Server()->Tick() % Server()->TickSpeed() == 0)
+					GameServer()->SendBroadcast("At least 2 players to start game", -1);
 			}
 			else
 			{
-				numOfSpectators++;
+				// clear broadcast
+				GameServer()->SendBroadcast("", -1);
+
+				m_Hunters = (m_Civics + 4) / 5;
+
+				for(int iHunter = 0; iHunter < m_Hunters; iHunter++)
+				{
+					int nextHunter = rand() % m_Civics;
+					for(int i = 0; i < MAX_CLIENTS; i++)
+						// only players get elected
+						if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS && !GameServer()->m_apPlayers[i]->GetHunter())
+						{
+							if(nextHunter == 0)
+							{
+								m_Civics--;
+								GameServer()->m_apPlayers[i]->SetHunter(true);
+								str_format(aBuf, sizeof(aBuf), "'%d:%s' is hunter", GameServer()->m_apPlayers[i]->GetCID(), Server()->ClientName(GameServer()->m_apPlayers[i]->GetCID()));
+								GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "game", aBuf);
+								break;
+							}
+							nextHunter--;
+						}
+				}
+
+				// notify all
+				if(m_Hunters == 1)
+					GameServer()->SendChat(-1, CGameContext::CHAT_ALL, "A new Hunter has been selected.");
+				else
+				{
+					str_format(aBuf, sizeof(aBuf), "%d new Hunters have been selected.", m_Hunters);
+					GameServer()->SendChat(-1, CGameContext::CHAT_ALL, aBuf);
+				}
+				GameServer()->SendChat(-1, CGameContext::CHAT_ALL, "To win you must figure who it is and kill them.");
+				GameServer()->SendChat(-1, CGameContext::CHAT_ALL, "Be warned! Sudden Death.");
 			}
 		}
-
-	if(numOfHunters == 0 && numOfPlayers == 0 && numOfSpectators > 0)
-		for(int i = 0; i < MAX_CLIENTS; i++)
-			if(GameServer()->m_apPlayers[i])
-			{
-				GameServer()->m_apPlayers[i]->SetTeamDirect(GameServer()->m_pController->ClampTeam(1));
-				GameServer()->m_apPlayers[i]->SetHunter(false);
-			}
-
-	if(numOfHunters == 0 && numOfPlayers > 0)
-	{
-		for(int i = 0; i < MAX_CLIENTS; i++)
-			if(GameServer()->m_apPlayers[i])
-			{
-				GameServer()->m_apPlayers[i]->SetTeamDirect(GameServer()->m_pController->ClampTeam(1));
-				GameServer()->m_apPlayers[i]->SetHunter(false);
-			}
-
-		GameServer()->SendChat(-1, CGameContext::CHAT_ALL, "A new Hunter has been selected.");
-		GameServer()->SendChat(-1, CGameContext::CHAT_ALL, "To win you must figure who it is and kill them.");
-		GameServer()->SendChat(-1, CGameContext::CHAT_ALL, "Be warned! Sudden Death.");
-
-		int nextHunter = rand()%numOfPlayers;
-		for(int i = 0; i < MAX_CLIENTS; i++)
-			if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS)
-			{
-				if(nextHunter == 0)
-				{
-					GameServer()->m_apPlayers[i]->SetHunter(true);
-					break;
-				}
-				nextHunter--;
-			}
-	}
-
-	if(numOfHunters == 1 && numOfPlayers == 0 && numOfSpectators && m_GameOverTick == -1)
-	{
-		GameServer()->SendChat(-1, CGameContext::CHAT_ALL, "The Hunter Wins!");
-		EndRound();
 	}
 
 	IGameController::Tick();
@@ -110,24 +116,26 @@ void CGameControllerMOD::Tick()
 
 int CGameControllerMOD::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *pKiller, int Weapon)
 {
-
-	if(pVictim && pVictim->GetPlayer() && pVictim->GetPlayer()->GetHunter())
+	if(pVictim->GetPlayer()->GetHunter())
 	{
-		GameServer()->CreateSoundGlobal(SOUND_CTF_CAPTURE);
-		if(pVictim->GetPlayer())
+		m_Hunters--;
+		if(m_Hunters == 0 && m_Civics)
 		{
+			GameServer()->CreateSoundGlobal(SOUND_CTF_CAPTURE);
 			char aBuf[512];
 			str_format(aBuf, sizeof(aBuf), "Hunter '%s' was defeated!", Server()->ClientName(pVictim->GetPlayer()->GetCID()));
 			GameServer()->SendChat(-1, CGameContext::CHAT_ALL, aBuf);
+			EndRound();
+			return 0;
 		}
-		EndRound();
 	}
 	else
 	{
-		GameServer()->CreateSoundGlobal(SOUND_CTF_DROP);
-		if(pVictim->GetPlayer())
-			pVictim->GetPlayer()->SetTeamDirect(TEAM_SPECTATORS);
+		m_Civics--;
+		m_Deathes++;
 	}
+	GameServer()->CreateSoundGlobal(SOUND_CTF_DROP);
+	pVictim->GetPlayer()->SetTeamDirect(TEAM_SPECTATORS);
 
 	/*
 	if(!pKiller || Weapon == WEAPON_GAME)
@@ -141,19 +149,28 @@ int CGameControllerMOD::OnCharacterDeath(class CCharacter *pVictim, class CPlaye
 
 void CGameControllerMOD::DoWincheck()
 {
-}
-
-bool CGameControllerMOD::CanJoinTeam(int Team, int NotThisID)
-{
-	if(GameServer()->m_apPlayers[NotThisID] && GameServer()->m_apPlayers[NotThisID]->GetCharacter() && !GameServer()->m_apPlayers[NotThisID]->GetCharacter()->IsAlive())
-		return false;
-
-	return IGameController::CanJoinTeam(Team,NotThisID);
+	if(m_GameOverTick == -1 && !m_Warmup && !GameServer()->m_World.m_ResetRequested)
+	{
+		// when only hunter left, he wins
+		if(m_Hunters && m_Civics == 0 && m_Deathes)
+		{
+			GameServer()->SendChat(-1, CGameContext::CHAT_ALL, "The Hunter(s) Wins!");
+			m_Deathes = 0;
+			EndRound();
+		}
+	}
 }
 
 bool CGameControllerMOD::CanChangeTeam(CPlayer *pPlayer, int JoinTeam)
 {
-	return !pPlayer || !pPlayer->GetCharacter() || pPlayer->GetCharacter()->IsAlive();
+	GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "game", "CanChangeTeam");
+	if(JoinTeam == TEAM_SPECTATORS)
+		return true;
+
+	if(m_Hunters == 0)
+		return true;
+
+	return pPlayer->GetCharacter() && pPlayer->GetCharacter()->IsAlive();
 }
 
 void CGameControllerMOD::OnCharacterSpawn(class CCharacter *pChr)

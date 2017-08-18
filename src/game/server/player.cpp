@@ -18,10 +18,11 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 	m_pCharacter = 0;
 	m_ClientID = ClientID;
 	m_Team = GameServer()->m_pController->ClampTeam(Team);
+	m_Hunter = false;
+	m_WantTeam = m_Team;
 	m_SpectatorID = SPEC_FREEVIEW;
 	m_LastActionTick = Server()->Tick();
 	m_TeamChangeTick = Server()->Tick();
-	m_Hunter = false;
 }
 
 CPlayer::~CPlayer()

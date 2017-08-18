@@ -66,6 +66,8 @@ public:
 	int m_LastEmote;
 	int m_LastKill;
 
+	int m_WantTeam;
+
 	// TODO: clean this up
 	struct
 	{

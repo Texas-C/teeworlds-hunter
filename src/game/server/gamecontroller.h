@@ -138,9 +138,9 @@ public:
 	*/
 	virtual const char *GetTeamName(int Team);
 	virtual int GetAutoTeam(int NotThisID);
-	virtual bool CanJoinTeam(int Team, int NotThisID);
+	bool CanJoinTeam(int Team, int NotThisID);
 	bool CheckTeamBalance();
-	bool CanChangeTeam(CPlayer *pPplayer, int JoinTeam);
+	virtual bool CanChangeTeam(CPlayer *pPlayer, int JoinTeam);
 	int ClampTeam(int Team);
 
 	virtual void PostReset();

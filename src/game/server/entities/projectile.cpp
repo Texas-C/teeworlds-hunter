@@ -73,7 +73,7 @@ void CProjectile::Tick()
 			GameServer()->CreateSound(CurPos, m_SoundImpact);
 
 		if(m_Explosive)
-			if(OwnerChar && OwnerChar->GetPlayer() && OwnerChar->GetPlayer()->GetHunter())
+			if(OwnerChar->GetPlayer()->GetHunter())
 			{
 				GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, false);
 				/*
