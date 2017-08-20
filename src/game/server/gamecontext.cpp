@@ -234,7 +234,14 @@ void CGameContext::SendChat(int ChatterClientID, int Team, const char *pText)
 		str_format(aBuf, sizeof(aBuf), "%d:%d:%s: %s", ChatterClientID, Team, Server()->ClientName(ChatterClientID), pText);
 	else
 		str_format(aBuf, sizeof(aBuf), "*** %s", pText);
-	Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, Team!=CHAT_ALL?"teamchat":"chat", aBuf);
+	// disallow spectators talking with players
+	if(!m_pController->IsGameOver() && g_Config.m_HuntForceTeamTalk && 0 <= ChatterClientID && ChatterClientID < MAX_CLIENTS && !IsClientPlayer(ChatterClientID))
+	{
+		Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "forcedteamchat", aBuf);
+		Team = TEAM_SPECTATORS;
+	}
+	else
+		Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, Team!=CHAT_ALL?"teamchat":"chat", aBuf);
 
 	if(Team == CHAT_ALL)
 	{
@@ -1427,6 +1434,21 @@ void CGameContext::ConVote(IConsole::IResult *pResult, void *pUserData)
 	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 }
 
+void CGameContext::ConWhoIsHunter(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+
+	char aBuf[128];
+
+	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "game", "hunters:");
+	for(int i = 0; i < MAX_CLIENTS; i++)
+		if(pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetHunter())
+		{
+			str_format(aBuf, sizeof(aBuf), "  %d:%s", pSelf->m_apPlayers[i]->GetCID(), pSelf->Server()->ClientName(pSelf->m_apPlayers[i]->GetCID()));
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "game", aBuf);
+		}
+}
+
 void CGameContext::ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
 {
 	pfnCallback(pResult, pCallbackUserData);
@@ -1468,6 +1490,8 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("vote", "r", CFGFLAG_SERVER, ConVote, this, "Force a vote to yes/no");
 
 	Console()->Chain("sv_motd", ConchainSpecialMotdupdate, this);
+
+	Console()->Register("who_is_hunter", "", CFGFLAG_SERVER, ConWhoIsHunter, this, "Who is hunter?");
 }
 
 void CGameContext::OnInit(/*class IKernel *pKernel*/)

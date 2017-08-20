@@ -29,10 +29,11 @@ public:
 	// add more virtual functions here if you wish
 
 private:
-	void ReleaseAll();
-
 	int m_Hunters = 0;
+	int m_HunterDeathes = 0;
 	int m_Civics = 0;
-	int m_Deathes = 0;
+	int m_CivicDeathes = 0;
+
+	char m_aHuntersMessage[512];
 };
 #endif

@@ -1,5 +1,6 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
+#include <engine/shared/config.h>
 #include <game/generated/protocol.h>
 #include <game/server/gamecontext.h>
 #include "projectile.h"
@@ -73,9 +74,10 @@ void CProjectile::Tick()
 			GameServer()->CreateSound(CurPos, m_SoundImpact);
 
 		if(m_Explosive)
-			if(OwnerChar->GetPlayer()->GetHunter())
+		{
+			GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, false);
+			if(g_Config.m_HuntGrenadeShotgunEffect && OwnerChar && OwnerChar->GetPlayer() && OwnerChar->GetPlayer()->GetHunter())
 			{
-				GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, false);
 				/*
 				GameServer()->CreateExplosion(CurPos+vec2(50,50), m_Owner, m_Weapon, false);
 				GameServer()->CreateExplosion(CurPos+vec2(50,-50), m_Owner, m_Weapon, true);
@@ -107,8 +109,7 @@ void CProjectile::Tick()
 
 				Server()->SendMsg(&Msg, 0, m_Owner);
 			}
-			else
-				GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, false);
+		}
 
 		else if(TargetChr)
 			TargetChr->TakeDamage(m_Direction * max(0.001f, m_Force), m_Damage, m_Owner, m_Weapon);

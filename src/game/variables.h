@@ -84,6 +84,14 @@ MACRO_CONFIG_INT(SvVoteKick, sv_vote_kick, 1, 0, 1, CFGFLAG_SERVER, "Allow votin
 MACRO_CONFIG_INT(SvVoteKickMin, sv_vote_kick_min, 0, 0, MAX_CLIENTS, CFGFLAG_SERVER, "Minimum number of players required to start a kick vote")
 MACRO_CONFIG_INT(SvVoteKickBantime, sv_vote_kick_bantime, 5, 0, 1440, CFGFLAG_SERVER, "The time to ban a player if kicked by vote. 0 makes it just use kick")
 
+MACRO_CONFIG_INT(HuntForceTeamTalk, hunt_force_team_talk, 1, 0, 1, CFGFLAG_SERVER, "Force spectators to talk within their team")
+MACRO_CONFIG_INT(HuntFixedHunter, hunt_fixed_hunter, 0, 0, 1, CFGFLAG_SERVER, "Whether to fix the number hunters (1 to fix)")
+MACRO_CONFIG_INT(HuntHunterNumber, hunt_hunter_number, 1, 1, 0xFFFFFF, CFGFLAG_SERVER, "When fixing hunter number, the number of hunters")
+MACRO_CONFIG_INT(HuntHunterRatio, hunt_hunter_ratio, 5, 2, 0xFFFFFF, CFGFLAG_SERVER, "When not fixing hunter number, select one hunter among N players")
+MACRO_CONFIG_INT(HuntPowerup, hunt_powerup, 2, 1, 0xFFFFFF, CFGFLAG_SERVER, "The powerup ratio of hunter's weapon")
+MACRO_CONFIG_INT(HuntBroadcastHunterDeath, hunt_broadcast_hunter_death, 1, 0, 1, CFGFLAG_SERVER, "Broadcast hunter death")
+MACRO_CONFIG_INT(HuntGrenadeShotgunEffect, hunt_grenade_shotgun_effect, 1, 0, 1, CFGFLAG_SERVER, "Grenade shotgun effect")
+
 // debug
 #ifdef CONF_DEBUG // this one can crash the server if not used correctly
 	MACRO_CONFIG_INT(DbgDummies, dbg_dummies, 0, 0, 15, CFGFLAG_SERVER, "")

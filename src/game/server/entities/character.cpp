@@ -332,7 +332,7 @@ void CCharacter::FireWeapon()
 				ProjStartPos,
 				Direction,
 				(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_GunLifetime),
-				m_pPlayer->GetHunter() ? 2 : 1, 0, 0, -1, WEAPON_GUN);
+				m_pPlayer->GetHunter() ? g_Config.m_HuntPowerup : 1, 0, 0, -1, WEAPON_GUN);
 
 			GameServer()->CreateSound(m_Pos, SOUND_GUN_FIRE);
 		} break;
@@ -354,7 +354,7 @@ void CCharacter::FireWeapon()
 					ProjStartPos,
 					vec2(cosf(a), sinf(a))*Speed,
 					(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_ShotgunLifetime),
-					m_pPlayer->GetHunter() ? 2 : 1, 0, 0, -1, WEAPON_SHOTGUN);
+					m_pPlayer->GetHunter() ? g_Config.m_HuntPowerup : 1, 0, 0, -1, WEAPON_SHOTGUN);
 			}
 
 			GameServer()->CreateSound(m_Pos, SOUND_SHOTGUN_FIRE);
@@ -687,7 +687,7 @@ void CCharacter::Die(int Killer, int Weapon)
 
 	for(int i = 0; i < MAX_CLIENTS; i++)
 		if(GameServer()->IsClientReady(i))
-			Server()->SendPackMsg((GameServer()->IsClientPlayer(i) && !GameServer()->m_apPlayers[i]->GetHunter()) ? &PlayerMsg : &Msg, MSGFLAG_VITAL, i);
+			Server()->SendPackMsg(GameServer()->IsClientPlayer(i) ? &PlayerMsg : &Msg, MSGFLAG_VITAL, i);
 
 	// a nice sound
 	GameServer()->CreateSound(m_Pos, SOUND_PLAYER_DIE);

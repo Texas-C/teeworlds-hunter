@@ -79,6 +79,7 @@ public:
 
 	int m_RespawnTick;
 	int m_DieTick;
+	int m_HiddenScore;
 	int m_Score;
 	int m_ScoreStartTick;
 	bool m_ForceBalanced;
