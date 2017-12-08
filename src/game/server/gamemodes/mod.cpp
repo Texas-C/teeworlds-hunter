@@ -68,7 +68,7 @@ void CGameControllerMOD::Tick()
 			PostReset();
 
 			// elect hunter
-			int LeastPlayers = g_Config.m_HuntFixedHunter ? (g_Config.m_HuntHunterNumber + 1) : 2;
+			int LeastPlayers = g_Config.m_HuntHunterFixed ? (g_Config.m_HuntHunterNumber + 1) : 2;
 			if(m_Civics < LeastPlayers)
 			{
 				if(Server()->Tick() % (Server()->TickSpeed() * 2) == 0)
@@ -87,7 +87,7 @@ void CGameControllerMOD::Tick()
 			}
 			else
 			{
-				m_Hunters = g_Config.m_HuntFixedHunter ? g_Config.m_HuntHunterNumber : ((m_Civics + g_Config.m_HuntHunterRatio - 1) / g_Config.m_HuntHunterRatio);
+				m_Hunters = g_Config.m_HuntHunterFixed ? g_Config.m_HuntHunterNumber : ((m_Civics + g_Config.m_HuntHunterRatio - 1) / g_Config.m_HuntHunterRatio);
 				if(m_Hunters == 1)
 				{
 					str_copy(aBuf, "Hunter is: ", sizeof(aBuf));
@@ -173,7 +173,7 @@ int CGameControllerMOD::OnCharacterDeath(class CCharacter *pVictim, class CPlaye
 						GameServer()->SendChatTarget(GameServer()->m_apPlayers[i]->GetCID(), aBuf);
 		// add score
 		if(!pKiller->GetHunter())
-			pKiller->m_HiddenScore++;
+			pKiller->m_HiddenScore += g_Config.m_HuntScoreCivicKillHunter;
 		// if the last hunter, leave DoWincheck() to play the sound
 		if(m_Hunters)
 		{
@@ -200,7 +200,7 @@ int CGameControllerMOD::OnCharacterDeath(class CCharacter *pVictim, class CPlaye
 	}
 
 	// revel hunters (except for the only hunter or the last civic)
-	if(!(pVictim->GetPlayer()->GetHunter() ? m_Hunters + m_HunterDeathes == 1 : m_Civics == 1))
+	if(!(pVictim->GetPlayer()->GetHunter() && m_Hunters + m_HunterDeathes == 1))
 		GameServer()->SendChatTarget(pVictim->GetPlayer()->GetCID(), m_aHuntersMessage);
 	pVictim->GetPlayer()->SetTeamDirect(TEAM_SPECTATORS);
 
@@ -234,10 +234,6 @@ void CGameControllerMOD::DoWincheck()
 				pWinMessage = "The Hunter Wins!";
 			else
 				pWinMessage = "The Hunters Win!";
-			// add score for live hunters
-			for(int i = 0; i < MAX_CLIENTS; i++)
-				if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->GetHunter() && GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS)
-					GameServer()->m_apPlayers[i]->m_HiddenScore += 3;
 		}
 		// timeout or hunters died out
 		else if((g_Config.m_SvTimelimit > 0 && (Server()->Tick()-m_RoundStartTick) >= g_Config.m_SvTimelimit*Server()->TickSpeed()*60) || (m_Hunters == 0 && m_Civics && m_HunterDeathes))
@@ -249,9 +245,13 @@ void CGameControllerMOD::DoWincheck()
 			goto no_win;
 
 		GameServer()->SendChatTarget(-1, pWinMessage);
+		// add score for live hunters
+		for(int i = 0; i < MAX_CLIENTS; i++)
+			if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS)
+				GameServer()->m_apPlayers[i]->m_HiddenScore += GameServer()->m_apPlayers[i]->GetHunter() ? g_Config.m_HuntScoreHunterWin : g_Config.m_HuntScoreCivicWin;
 		// round end sound
 		GameServer()->CreateSoundGlobal(SOUND_CTF_CAPTURE);
-		// add hidden scores for players
+		// add hidden scores back to players
 		for(int i = 0; i < MAX_CLIENTS; i++)
 			if(GameServer()->m_apPlayers[i])
 			{
