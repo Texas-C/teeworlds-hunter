@@ -304,5 +304,5 @@ void CPlayer::SetHunter(bool isHunter)
 {
 	m_Hunter = isHunter;
 	if(isHunter)
-		GameServer()->SendBroadcast("You are the Hunter!\nKill all other players to win!", m_ClientID);
+		GameServer()->SendBroadcast("You are the Hunter!\nKill all civics to win!", m_ClientID);
 }
