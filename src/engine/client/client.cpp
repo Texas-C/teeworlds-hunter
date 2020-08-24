@@ -1239,7 +1239,7 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket)
 
 			pData = (const char *)Unpacker.GetRaw(PartSize);
 
-			if(Unpacker.Error() || NumParts < 1 || NumParts > CSnapshot::MAX_PARTS || Part < 0 | Part >= NumParts || PartSize < 0 || PartSize > MAX_SNAPSHOT_PACKSIZE)
+			if(Unpacker.Error() || NumParts < 1 || NumParts > CSnapshot::MAX_PARTS || Part < 0 || Part >= NumParts || PartSize < 0 || PartSize > MAX_SNAPSHOT_PACKSIZE)
 				return;
 
 			if(GameTick >= m_CurrentRecvTick)
@@ -1303,7 +1303,7 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket)
 
 					if(CompleteSize)
 					{
-						int IntSize = CVariableInt::Decompress(m_aSnapshotIncommingData, CompleteSize, aTmpBuffer2);
+						int IntSize = CVariableInt::Decompress(m_aSnapshotIncommingData, CompleteSize, aTmpBuffer2, sizeof(aTmpBuffer2));
 
 						if(IntSize < 0) // failure during decompression, bail
 							return;
@@ -1713,7 +1713,7 @@ void CClient::InitInterfaces()
 	m_pStorage = Kernel()->RequestInterface<IStorage>();
 
 	//
-	m_ServerBrowser.SetBaseInfo(&m_ContactClient, m_pGameClient->NetVersion());
+	m_ServerBrowser.SetBaseInfo(&m_ContactClient, m_pGameClient->NetVersion(), m_pGameClient->Version());
 	m_Friends.Init();
 }
 
@@ -2302,6 +2302,12 @@ int main(int argc, const char **argv) // ignore_convention
 		}
 	}
 #endif
+
+	if(secure_random_init() != 0)
+	{
+		dbg_msg("secure", "could not initialize secure RNG");
+		return -1;
+	}
 
 	CClient *pClient = CreateClient();
 	IKernel *pKernel = IKernel::Create();

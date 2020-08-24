@@ -8,6 +8,7 @@ src/game/generated
 SDL.dll
 freetype.dll
 autoexec.cfg
+Info.plist
 
 crapnet*
 dilate*
@@ -21,3 +22,19 @@ teeworlds_srv*
 hunter_srv*
 tileset_border*
 versionsrv*
+
+# CMake
+data
+!/data
+src
+!/src
+
+*.ninja
+.ninja*
+CMakeCache.txt
+CMakeFiles/
+CPackConfig.cmake
+CPackSourceConfig.cmake
+Makefile
+cmake_install.cmake
+install_manifest.txt
