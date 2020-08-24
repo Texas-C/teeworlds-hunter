@@ -72,7 +72,7 @@ if(TARGET_OS STREQUAL "windows")
   set(AUTO_DEPENDENCIES_DEFAULT ON)
 endif()
 
-option(CLIENT "Compile client" ON)
+option(CLIENT "Compile client" OFF)
 option(PREFER_BUNDLED_LIBS "Prefer bundled libraries over system libraries" ${AUTO_DEPENDENCIES_DEFAULT})
 option(DEV "Don't generate stuff necessary for packaging" OFF)
 
@@ -91,7 +91,7 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
   src/game/version.h
 )
 
-set(SERVER_EXECUTABLE teeworlds_srv CACHE STRING "Name of the built server executable")
+set(SERVER_EXECUTABLE hunter_srv CACHE STRING "Name of the built server executable")
 set(CLIENT_EXECUTABLE teeworlds CACHE STRING "Name of the build client executable")
 
 ########################################################################
